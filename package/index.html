@@ -1,80 +1,24 @@
 <!doctype html>
 <html lang="id">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kasir Lokal</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="theme-color" content="#2e7d32" /><title>Kasir Pro</title><link rel="stylesheet" href="./styles.css" /><style>.barcode-field{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:6px}.barcode-field input{margin:0}.barcode-field .tonal-button{height:42px;border-radius:7px}.scanner-dialog{width:min(480px,calc(100vw - 26px));padding:20px}.camera-frame{aspect-ratio:1.35;background:#101411;position:relative;border-radius:13px;overflow:hidden}.camera-frame video{width:100%;height:100%;object-fit:cover}.scan-line{position:absolute;left:12%;right:12%;height:2px;background:#69e56f;box-shadow:0 0 12px #69e56f;top:50%;animation:scan 1.7s ease-in-out infinite}@keyframes scan{0%,100%{transform:translateY(-74px)}50%{transform:translateY(74px)}}.manual-barcode{margin-top:4px}.scanner-dialog .outline-wide{margin-bottom:0}.confirm-dialog{text-align:center;padding:24px 22px}.confirm-dialog h2{margin:10px 0 7px}.confirm-dialog p{margin:0;color:#69746b;line-height:1.5}.confirm-dialog .dialog-actions{justify-content:center}.confirm-dialog .danger{background:#b3261e;color:#fff}.confirm-icon{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#fff0d8;color:#b46600;font-weight:800;font-size:23px;margin:auto}</style></head>
   <body>
-    <header>
-      <div>
-        <p class="eyebrow">SQLITE WASM · DATA DI PERANGKAT ANDA</p>
-        <h1>Kasir Lokal</h1>
-      </div>
-      <div id="database-state" class="state loading">Menyiapkan database…</div>
-    </header>
-
-    <main id="app" hidden>
-      <nav aria-label="Menu aplikasi">
-        <button class="nav-button active" data-view="pos">Kasir</button>
-        <button class="nav-button" data-view="products">Barang</button>
-        <button class="nav-button" data-view="history">Riwayat</button>
-        <button class="nav-button" data-view="reports">Rekap</button>
-        <button class="nav-button" data-view="backup">Backup</button>
-      </nav>
-
-      <section id="view-pos" class="view active">
-        <div class="section-heading"><div><p class="eyebrow">POINT OF SALE</p><h2>Transaksi baru</h2></div><button id="clear-cart" class="secondary">Kosongkan keranjang</button></div>
-        <div class="pos-layout">
-          <div class="card">
-            <label for="product-search">Cari nama atau barcode</label>
-            <input id="product-search" autocomplete="off" placeholder="Contoh: 899… atau Indomie" />
-            <div id="product-results" class="product-results"></div>
-          </div>
-          <div class="card cart-card">
-            <h3>Keranjang</h3>
-            <div id="cart-items" class="cart-items empty">Belum ada barang di keranjang.</div>
-            <div class="cart-total"><span>Total</span><strong id="cart-total">Rp0</strong></div>
-            <div class="checkout-grid">
-              <label>Metode bayar<select id="payment-method"><option>Cash</option><option>QRIS</option><option>Transfer/Rekening</option></select></label>
-              <label>Nominal dibayar<input id="amount-paid" type="number" min="0" inputmode="numeric" placeholder="0" /></label>
-            </div>
-            <div id="change-preview" class="change-preview">Kembalian: Rp0</div>
-            <button id="checkout" class="primary wide">Simpan transaksi</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="view-products" class="view">
-        <div class="section-heading"><div><p class="eyebrow">MASTER DATA</p><h2>Barang</h2></div><button id="new-product" class="primary">+ Tambah barang</button></div>
-        <div class="card table-card"><input id="product-filter" placeholder="Filter barang…" /><div id="products-table"></div></div>
-      </section>
-
-      <section id="view-history" class="view">
-        <div class="section-heading"><div><p class="eyebrow">PENJUALAN</p><h2>Riwayat transaksi</h2></div></div>
-        <div class="card table-card"><div id="history-table"></div></div>
-      </section>
-
-      <section id="view-reports" class="view">
-        <div class="section-heading"><div><p class="eyebrow">ANALISIS</p><h2>Rekap penjualan</h2></div></div>
-        <div class="date-row"><label>Dari<input id="report-from" type="date" /></label><label>Sampai<input id="report-to" type="date" /></label><button id="refresh-report" class="secondary">Terapkan</button></div>
-        <div id="report-metrics" class="metrics"></div>
-        <div class="report-grid"><div class="card"><h3>Barang terlaris</h3><div id="top-products"></div></div><div class="card"><h3>Metode pembayaran</h3><div id="payment-report"></div></div></div>
-      </section>
-
-      <section id="view-backup" class="view">
-        <div class="section-heading"><div><p class="eyebrow">KEPEMILIKAN DATA</p><h2>Backup & pemulihan</h2></div></div>
-        <div class="backup-grid">
-          <div class="card"><h3>Unduh database</h3><p>Unduh seluruh data sebagai berkas SQLite standar untuk disimpan atau dipindahkan ke perangkat lain.</p><button id="export-db" class="primary">Unduh kasir-lokal.sqlite</button></div>
-          <div class="card"><h3>Pulihkan database</h3><p>Memulihkan akan mengganti semua data lokal pada browser ini.</p><label class="upload-button" for="import-db">Pilih file .sqlite / .db</label><input id="import-db" type="file" accept=".sqlite,.db,application/x-sqlite3" hidden /><p id="import-name" class="muted">Belum ada file dipilih.</p></div>
-          <div class="card danger-card"><h3>Hapus semua data</h3><p>Mengosongkan database lokal untuk browser dan situs ini.</p><button id="reset-db" class="danger">Hapus database lokal</button></div>
-        </div>
-      </section>
-    </main>
-
-    <dialog id="product-dialog"><form id="product-form" method="dialog"><div class="dialog-heading"><h2 id="product-dialog-title">Tambah barang</h2><button class="icon-button" value="cancel" aria-label="Tutup">×</button></div><input id="product-id" type="hidden" /><label>Barcode<input id="product-barcode" /></label><label>Nama barang<input id="product-name" required /></label><div class="form-grid"><label>Satuan<input id="product-unit" value="Pcs" /></label><label>Harga<input id="product-price" required type="number" min="0" inputmode="numeric" /></label><label>Stok<input id="product-stock" required type="number" min="0" step="0.01" /></label></div><div class="dialog-actions"><button value="cancel" class="secondary">Batal</button><button id="save-product" value="default" class="primary">Simpan</button></div></form></dialog>
-    <div id="toast" role="status" aria-live="polite"></div>
-    <script type="module" src="./app.js"></script>
+    <div id="loading-screen"><div class="spinner"></div><strong>Menyiapkan database lokal…</strong><span>SQLite WASM</span></div>
+    <div id="app" hidden>
+      <header class="appbar"><h1 id="app-title">📦 Dashboard Barang</h1><div class="appbar-actions"><button id="backup-open" class="icon-button" title="Backup database" aria-label="Backup database">⚙</button><button id="pos-scan" class="icon-button only-pos" title="Masukkan barcode" aria-label="Masukkan barcode">⌁</button></div></header>
+      <main>
+        <section id="view-dashboard" class="view active"><div id="dashboard-metrics" class="metric-grid"></div><label class="search-field"><span>⌕</span><input id="product-filter" placeholder="Cari nama atau barcode..." autocomplete="off" /><button id="clear-product-filter" aria-label="Hapus pencarian">×</button></label><div id="stock-alert"></div><div id="products-list" class="card-list"></div><button id="new-product" class="fab"><span>＋</span> Tambah Barang</button></section>
+        <section id="view-pos" class="view"><div class="pos-controls"><label class="search-field"><span>⌕</span><input id="product-search" autocomplete="off" placeholder="Cari barang..." /></label><button id="scan-button" class="tonal-button">▣ <span>Scan</span></button></div><button id="pick-product" class="outline-wide">＋ 🛒 &nbsp;Pilih Barang</button><div id="product-results" class="search-results"></div><div id="cart-items" class="cart-list"></div><div id="checkout-card" class="card checkout-card" hidden><div class="total-row"><strong>Total Bayar</strong><strong id="cart-total">Rp0</strong></div><label>Metode Pembayaran<select id="payment-method"><option>Cash</option><option>QRIS</option><option>Transfer/Rekening</option></select></label><label id="paid-field">Jumlah Dibayar<input id="amount-paid" type="number" min="0" inputmode="numeric" placeholder="Rp 0" /></label><div id="change-preview" class="change-preview">Kembalian: Rp0</div><div class="checkout-actions"><button id="clear-cart" class="text-button">Kosongkan</button><button id="checkout" class="primary">✓ Simpan Transaksi</button></div></div></section>
+        <section id="view-history" class="view"><div class="date-range"><label><input id="history-from" type="date" /></label><span>s/d</span><label><input id="history-to" type="date" /></label></div><button id="download-history" class="tonal-wide">⇩ &nbsp;Unduh CSV Laporan</button><div id="history-metrics" class="summary-grid"></div><div id="history-list" class="card-list"></div></section>
+        <section id="view-reports" class="view"><div class="date-range"><label><input id="report-from" type="date" /></label><span>s/d</span><label><input id="report-to" type="date" /></label></div><div id="report-metrics" class="metric-grid"></div><div class="report-section"><h2>⌁ Tren Pendapatan Harian</h2><div id="trend-chart" class="card trend-chart"></div></div><div class="report-section"><h2>🏆 Barang Terlaris Berdasarkan Qty</h2><div id="top-qty" class="card"></div></div><div class="report-section"><h2>💳 Barang Terlaris Berdasarkan Pendapatan</h2><div id="top-revenue" class="card"></div></div><div class="report-section"><h2>▣ Metode Pembayaran</h2><div id="payment-report"></div></div></section>
+      </main>
+      <nav class="bottom-nav" aria-label="Menu aplikasi"><button class="nav-button active" data-view="dashboard"><span>▣</span>Barang</button><button class="nav-button" data-view="pos"><span>▤</span>Kasir</button><button class="nav-button" data-view="history"><span>☷</span>Histori</button><button class="nav-button" data-view="reports"><span>▥</span>Rekap</button></nav>
+    </div>
+    <dialog id="product-dialog"><form id="product-form"><div class="dialog-heading"><h2 id="product-dialog-title">Tambah Barang</h2><button type="button" class="icon-button" data-close="product-dialog" aria-label="Tutup">×</button></div><label>Barcode<div class="barcode-field"><input id="product-barcode" /><button type="button" id="product-scan" class="tonal-button" aria-label="Scan barcode">▣ Scan</button></div></label><label>Nama Barang<input id="product-name" required /></label><label>Satuan<select id="product-unit"><option>Pcs</option><option>Kg</option><option>Gram</option><option>Liter</option><option>Box</option><option>Pack</option><option>Lusin</option></select></label><label>Harga<input id="product-price" required type="number" min="0" inputmode="numeric" /></label><label>Stok<input id="product-stock" required type="number" min="0" step="0.01" /></label><input id="product-id" type="hidden" /><div class="dialog-actions"><button type="button" data-close="product-dialog" class="text-button">Batal</button><button id="save-product" type="submit" class="primary">Simpan</button></div></form></dialog>
+    <dialog id="picker-dialog" class="bottom-sheet"><div class="drag-handle"></div><h2>Pilih Barang</h2><label class="search-field"><span>⌕</span><input id="picker-search" placeholder="Cari barang..." autofocus /></label><div id="picker-list" class="picker-list"></div></dialog>
+    <dialog id="quantity-dialog"><form id="quantity-form" method="dialog"><h2 id="quantity-title">Jumlah barang</h2><label>Jumlah<input id="quantity-value" type="number" min="0.01" step="0.01" value="1" inputmode="decimal" /></label><div class="dialog-actions"><button value="cancel" class="text-button">Batal</button><button id="quantity-add" value="default" class="primary">Tambah</button></div></form></dialog>
+    <dialog id="backup-dialog"><form><div class="dialog-heading"><h2>Backup Database</h2><button type="button" class="icon-button" data-close="backup-dialog" aria-label="Tutup">×</button></div><div class="backup-option"><strong>Unduh database</strong><span>Simpan seluruh data sebagai file SQLite.</span><button id="export-db" type="button" class="primary">⇩ Unduh .sqlite</button></div><div class="backup-option"><strong>Pulihkan database</strong><span>File akan mengganti database lokal di browser ini.</span><label class="outline-wide upload-label" for="import-db">Pilih file .sqlite / .db</label><input id="import-db" type="file" accept=".sqlite,.db,application/x-sqlite3" hidden /><small id="import-name">Belum ada file dipilih.</small></div><div class="backup-option danger-option"><strong>Hapus semua data</strong><span>Mengosongkan database lokal browser ini.</span><button id="reset-db" type="button" class="danger">Hapus database lokal</button></div></form></dialog>
+    <dialog id="scanner-dialog" class="scanner-dialog"><div class="dialog-heading"><h2>Scan Barcode</h2><button type="button" id="scanner-close" class="icon-button" aria-label="Tutup pemindai">×</button></div><div class="camera-frame"><video id="scanner-video" playsinline autoplay muted></video><div class="scan-line"></div></div><p id="scanner-status" class="muted">Membuka kamera…</p><label class="manual-barcode">Atau masukkan barcode manual<input id="scanner-manual" inputmode="numeric" autocomplete="off" placeholder="Ketik kode barcode" /></label><button id="scanner-submit" type="button" class="outline-wide">Gunakan barcode</button></dialog>
+    <dialog id="confirm-dialog" class="confirm-dialog"><div class="confirm-icon" id="confirm-icon">!</div><h2 id="confirm-title">Konfirmasi</h2><p id="confirm-message"></p><div class="dialog-actions"><button id="confirm-cancel" type="button" class="text-button">Batal</button><button id="confirm-approve" type="button" class="primary">Lanjutkan</button></div></dialog>
+    <div id="toast" role="status" aria-live="polite"></div><script type="module" src="./app.js"></script>
   </body>
 </html>

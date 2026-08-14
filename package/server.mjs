@@ -5,10 +5,11 @@ import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(fileURLToPath(new URL('.', import.meta.url)));
-const port = Number(process.env.PORT || 8000);
+const configuredPort = Number(process.env.PORT || 8000);
+let port = configuredPort;
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.wasm': 'application/wasm', '.json': 'application/json; charset=utf-8' };
 
-createServer(async (request, response) => {
+const server = createServer(async (request, response) => {
   const pathname = decodeURIComponent(new URL(request.url, `http://${request.headers.host}`).pathname);
   const target = resolve(root, normalize(pathname === '/' ? 'index.html' : `.${pathname}`));
   const headers = { 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Embedder-Policy': 'require-corp', 'Cross-Origin-Resource-Policy': 'same-origin', 'Cache-Control': 'no-store' };
@@ -21,4 +22,15 @@ createServer(async (request, response) => {
     response.writeHead(404, { ...headers, 'Content-Type': 'text/plain; charset=utf-8' });
     response.end('Not found');
   }
-}).listen(port, '0.0.0.0', () => console.log(`Kasir Lokal siap di port ${port}`));
+});
+
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE' && port === configuredPort) {
+    port = configuredPort + 1;
+    console.warn(`Port ${configuredPort} sedang dipakai; memakai port ${port}.`);
+    server.listen(port, '0.0.0.0');
+    return;
+  }
+  throw error;
+});
+server.listen(port, '0.0.0.0', () => console.log(`Kasir Lokal siap di http://localhost:${port}`));

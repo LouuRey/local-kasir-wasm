@@ -98,14 +98,37 @@ const handlers = {
     } catch (error) { db.exec('ROLLBACK'); throw error; }
     return { id, total, kembalian: paid - total };
   },
-  history() {
-    return execute(`SELECT t.id, t.waktu, t.metode_bayar, t.total_bayar, t.dibayar, t.kembalian, GROUP_CONCAT(d.nama_barang || ' ×' || d.qty, ', ') AS items FROM transaksi t LEFT JOIN detail_transaksi d ON d.id_transaksi=t.id GROUP BY t.id ORDER BY t.waktu DESC LIMIT 100`);
+  dashboard() {
+    return execute(`SELECT COUNT(*) jenis, COALESCE(SUM(stok),0) stok, COALESCE(SUM(stok * harga),0) nilai,
+      COALESCE(SUM(CASE WHEN stok < 5 THEN 1 ELSE 0 END),0) menipis FROM barang`)[0];
+  },
+  history({ from, to }) {
+    const dates = [from + ' 00:00:00', to + ' 23:59:59'];
+    const summary = execute('SELECT COALESCE(SUM(total_bayar),0) pendapatan, COUNT(*) transaksi FROM transaksi WHERE waktu BETWEEN ? AND ?', dates)[0];
+    const transactions = execute('SELECT id, waktu, metode_bayar, total_bayar, dibayar, kembalian FROM transaksi WHERE waktu BETWEEN ? AND ? ORDER BY waktu DESC LIMIT 100', dates);
+    const details = execute(`SELECT d.id_transaksi, d.nama_barang, d.harga_satuan, d.qty, d.subtotal
+      FROM detail_transaksi d JOIN transaksi t ON t.id=d.id_transaksi WHERE t.waktu BETWEEN ? AND ? ORDER BY d.id`, dates);
+    return { summary, transactions: transactions.map((transaction) => ({ ...transaction, details: details.filter((detail) => detail.id_transaksi === transaction.id) })) };
+  },
+  deleteTransaction({ id }) {
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      const details = execute('SELECT id_barang, qty FROM detail_transaksi WHERE id_transaksi=?', [id]);
+      for (const detail of details) execute('UPDATE barang SET stok=stok+? WHERE id=?', [detail.qty, detail.id_barang]);
+      execute('DELETE FROM transaksi WHERE id=?', [id]);
+      db.exec('COMMIT');
+    } catch (error) { db.exec('ROLLBACK'); throw error; }
+    return true;
   },
   report({ from, to }) {
     const dates = [from + ' 00:00:00', to + ' 23:59:59'];
     return {
-      metrics: execute('SELECT COALESCE(SUM(total_bayar),0) total, COUNT(*) transaksi, COALESCE(AVG(total_bayar),0) rata_rata FROM transaksi WHERE waktu BETWEEN ? AND ?', dates)[0],
-      top: execute(`SELECT nama_barang, SUM(qty) qty, SUM(subtotal) pendapatan FROM detail_transaksi d JOIN transaksi t ON t.id=d.id_transaksi WHERE t.waktu BETWEEN ? AND ? GROUP BY nama_barang ORDER BY qty DESC LIMIT 8`, dates),
+      metrics: execute(`SELECT COALESCE(SUM(total_bayar),0) total, COUNT(*) transaksi,
+        COALESCE((SELECT SUM(d.qty) FROM detail_transaksi d JOIN transaksi tx ON tx.id=d.id_transaksi WHERE tx.waktu BETWEEN ? AND ?),0) item,
+        COALESCE(AVG(total_bayar),0) rata_rata FROM transaksi WHERE waktu BETWEEN ? AND ?`, [...dates, ...dates])[0],
+      trend: execute(`SELECT substr(waktu,1,10) tanggal, SUM(total_bayar) total FROM transaksi WHERE waktu BETWEEN ? AND ? GROUP BY substr(waktu,1,10) ORDER BY tanggal`, dates),
+      topQty: execute(`SELECT nama_barang, SUM(qty) qty, SUM(subtotal) pendapatan FROM detail_transaksi d JOIN transaksi t ON t.id=d.id_transaksi WHERE t.waktu BETWEEN ? AND ? GROUP BY nama_barang ORDER BY qty DESC LIMIT 8`, dates),
+      topRevenue: execute(`SELECT nama_barang, SUM(qty) qty, SUM(subtotal) pendapatan FROM detail_transaksi d JOIN transaksi t ON t.id=d.id_transaksi WHERE t.waktu BETWEEN ? AND ? GROUP BY nama_barang ORDER BY pendapatan DESC LIMIT 8`, dates),
       payments: execute('SELECT metode_bayar, SUM(total_bayar) total, COUNT(*) jumlah FROM transaksi WHERE waktu BETWEEN ? AND ? GROUP BY metode_bayar ORDER BY total DESC', dates)
     };
   },

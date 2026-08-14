@@ -9,7 +9,7 @@ cd C:\Users\Lenovo\Downloads\mlcc\kasir\local-kasir-wasm\package
 node server.mjs
 ```
 
-Buka `http://localhost:8000` menggunakan Chrome atau Edge terbaru. Jangan membuka `index.html` langsung dengan `file://`, karena SQLite WASM membutuhkan respons HTTP dengan header keamanan khusus untuk penyimpanan OPFS.
+Buka `http://localhost:8000` menggunakan Chrome atau Edge terbaru. Jangan membuka `index.html` langsung dengan `file://`, karena SQLite WASM membutuhkan respons HTTP dengan header keamanan khusus untuk penyimpanan OPFS. Jika port `8000` sedang dipakai, server otomatis mencoba `http://localhost:8001`.
 
 ## Deploy
 
